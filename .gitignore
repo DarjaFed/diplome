@@ -1,4 +1,11 @@
 .gradle
+Thumbs.db*
+.DS_Store*
+node_modules
+.idea
+target
+*.iml
+mysql/*
 build/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
