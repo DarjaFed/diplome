@@ -1,5 +1,6 @@
 package tests;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -12,11 +13,17 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class DatabaseTests {
 
-    private String url = System.getProperty("db.url",
-            "jdbc:mysql://localhost:3306/app");
+    private String url = "jdbc:mysql://localhost:3306/app";
+    private String user = "user";
+    private String password = "pass";
 
-    private String user = System.getProperty("db.user", "user");
-    private String password = System.getProperty("db.password", "pass");
+    @BeforeEach
+    void cleanDatabase() throws Exception {
+        Connection conn = DriverManager.getConnection(url, user, password);
+        Statement stmt = conn.createStatement();
+        stmt.executeUpdate("DELETE FROM credit_request_entity");
+        conn.close();
+    }
 
     @Test
     @DisplayName("Проверка записи APPROVED в базе данных")
@@ -26,7 +33,7 @@ public class DatabaseTests {
 
         Statement stmt = conn.createStatement();
         ResultSet rs = stmt.executeQuery(
-                "SELECT status FROM payment_entity ORDER BY created DESC LIMIT 1"
+                "SELECT status FROM credit_request_entity ORDER BY id DESC LIMIT 1"
         );
 
         rs.next();
@@ -41,7 +48,7 @@ public class DatabaseTests {
 
         Statement stmt = conn.createStatement();
         ResultSet rs = stmt.executeQuery(
-                "SELECT status FROM payment_entity ORDER BY created DESC LIMIT 1"
+                "SELECT status FROM credit_request_entity ORDER BY id DESC LIMIT 1"
         );
 
         rs.next();

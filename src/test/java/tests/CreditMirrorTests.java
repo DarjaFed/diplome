@@ -1,225 +1,251 @@
 package tests;
-
 import data.DataHelper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import pages.PaymentPage;
 
 import java.time.Duration;
-
-import static com.codeborne.selenide.Condition.visible;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import static com.codeborne.selenide.Condition.text;
+import static com.codeborne.selenide.Selenide.open;
+import static com.codeborne.selenide.Condition.visible;
 import static com.codeborne.selenide.Selenide.*;
+import static com.codeborne.selenide.Condition.*;
+import com.codeborne.selenide.Configuration;
 
 public class CreditMirrorTests {
 
     PaymentPage page = new PaymentPage();
 
-    // =========================
-    // 2–4 УСПЕШНАЯ И ОТКЛОНЁННАЯ ОПЛАТА В КРЕДИТ
-    // =========================
+    @BeforeEach
+    void setUp() {
+        // Настройки Selenide
 
-    @Test
-    @DisplayName("Сценарий №2: Успешное приобретение тура в кредит")
-    void test2() {
         open("http://localhost:8080");
-        $$("button").findBy(text("Купить в кредит")).click();
+    }
 
-        page.payWithCard(
-                "4444 4444 4444 4441",
-                "12",
-                "26",
-                "IVAN IVANOV",
-                "123"
-        );
-
+    // =========================
+    // 1–2: Позитивные сценарии
+    // =========================
+    @Test
+    @DisplayName("Сценарий 2: Успешное приобретение тура в кредит")
+    void shouldBuyWithApprovedCredit() {
+        $$("button").findBy(text("Купить в кредит")).shouldBe(visible).click();
+        page.payWithCard(DataHelper.approvedCard(), DataHelper.validMonth(),
+                DataHelper.validYear(), DataHelper.validOwner(), DataHelper.validCVV());
         page.submit();
         $(".notification_status_ok").shouldBe(visible, Duration.ofSeconds(10));
     }
 
+    // =========================
+    // 4: Негативный сценарий с отклонённой картой
+    // =========================
     @Test
-    @DisplayName("Сценарий №4: Попытка покупки тура в кредит по отклонённой карте")
-    void test4() {
-        open("http://localhost:8080");
-        $$("button").findBy(text("Купить в кредит")).click();
-
-        page.payWithCard(
-                "4444 4444 4444 4442",
-                "12",
-                "26",
-                "IVAN IVANOV",
-                "123"
-        );
-
+    @DisplayName("Сценарий 4: Попытка покупки тура в кредит по отклонённой карте")
+    void shouldRejectDeclinedCredit() {
+        $$("button").findBy(text("Купить в кредит")).shouldBe(visible).click();
+        page.payWithCard(DataHelper.declinedCard(), DataHelper.validMonth(),
+                DataHelper.validYear(), DataHelper.validOwner(), DataHelper.validCVV());
         page.submit();
         $(".notification_status_error").shouldBe(visible, Duration.ofSeconds(10));
     }
 
     // =========================
-    // 6 ВСЕ ПОЛЯ ПУСТЫЕ
+    // 6–24: Проверка валидации формы
     // =========================
 
+    // Сценарии 6: все поля пустые
     @Test
-    @DisplayName("Сценарий №6: Покупка тура в кредит со всеми пустыми полями")
-    void test6() {
-        open("http://localhost:8080");
-        $$("button").findBy(text("Купить в кредит")).click();
-
+    @DisplayName("Сценарий 6: Покупка в кредит со всеми пустыми полями")
+    void shouldShowErrorsEmptyFieldsCredit() {
+        $$("button").findBy(text("Купить в кредит")).shouldBe(visible).click();
         page.payWithCard("", "", "", "", "");
         page.submit();
-
-        $(".input__sub").shouldBe(visible);
-    }
-
-    // =========================
-    // 7–11 ПУСТЫЕ ПОЛЯ ПО ОТДЕЛЬНОСТИ
-    // =========================
-
-    @Test
-    @DisplayName("Сценарий №7: Пустой номер карты (кредит)")
-    void test7() {
-        open("http://localhost:8080");
-        $$("button").findBy(text("Купить в кредит")).click();
-
-        page.payWithCard("", "12", "26", "IVAN IVANOV", "123");
-        page.submit();
-
-        $(".input__sub").shouldBe(visible);
+        $$("span.input__sub").filter(visible).forEach(el ->
+                el.shouldHave(text("Поле обязательно для заполнения")));
     }
 
     @Test
-    @DisplayName("Сценарий №8: Пустой месяц (кредит)")
-    void test8() {
-        open("http://localhost:8080");
-        $$("button").findBy(text("Купить в кредит")).click();
-
-        page.payWithCard("4444 4444 4444 4441", "", "26", "IVAN IVANOV", "123");
+    @DisplayName("Сценарий 7: Пустой номер карты")
+    void shouldShowErrorEmptyCardCredit() {
+        $$("button").findBy(text("Купить в кредит")).shouldBe(visible).click();
+        page.payWithCard("", DataHelper.validMonth(), DataHelper.validYear(),
+                DataHelper.validOwner(), DataHelper.validCVV());
         page.submit();
-
-        $(".input__sub").shouldBe(visible);
+        $(".input__sub").shouldHave(text("Поле обязательно для заполнения"));
     }
 
     @Test
-    @DisplayName("Сценарий №9: Пустой год (кредит)")
-    void test9() {
-        open("http://localhost:8080");
-        $$("button").findBy(text("Купить в кредит")).click();
-
-        page.payWithCard("4444 4444 4444 4441", "12", "", "IVAN IVANOV", "123");
+    @DisplayName("Сценарий 8: Пустой месяц")
+    void shouldShowErrorEmptyMonthCredit() {
+        $$("button").findBy(text("Купить в кредит")).shouldBe(visible).click();
+        page.payWithCard(DataHelper.approvedCard(), "", DataHelper.validYear(),
+                DataHelper.validOwner(), DataHelper.validCVV());
         page.submit();
-
-        $(".input__sub").shouldBe(visible);
+        $(".input__sub").shouldHave(text("Поле обязательно для заполнения"));
     }
 
     @Test
-    @DisplayName("Сценарий №10: Пустое поле \"Владелец\" (кредит)")
-    void test10() {
-        open("http://localhost:8080");
-        $$("button").findBy(text("Купить в кредит")).click();
-
-        page.payWithCard("4444 4444 4444 4441", "12", "26", "", "123");
+    @DisplayName("Сценарий 9: Пустой год")
+    void shouldShowErrorEmptyYearCredit() {
+        $$("button").findBy(text("Купить в кредит")).shouldBe(visible).click();
+        page.payWithCard(DataHelper.approvedCard(), DataHelper.validMonth(), "",
+                DataHelper.validOwner(), DataHelper.validCVV());
         page.submit();
-
-        $(".input__sub").shouldBe(visible);
+        $(".input__sub").shouldHave(text("Поле обязательно для заполнения"));
     }
 
     @Test
-    @DisplayName("Сценарий №11: Пустой CVV (кредит)")
-    void test11() {
-        open("http://localhost:8080");
-        $$("button").findBy(text("Купить в кредит")).click();
-
-        page.payWithCard("4444 4444 4444 4441", "12", "26", "IVAN IVANOV", "");
+    @DisplayName("Сценарий 10: Пустое поле 'Владелец'")
+    void shouldShowErrorEmptyOwnerCredit() {
+        $$("button").findBy(text("Купить в кредит")).shouldBe(visible).click();
+        page.payWithCard(DataHelper.approvedCard(), DataHelper.validMonth(),
+                DataHelper.validYear(), "", DataHelper.validCVV());
         page.submit();
-
-        $(".input__sub").shouldBe(visible);
-    }
-
-    // =========================
-    // 12–18 НЕВАЛИДНЫЕ ДАННЫЕ
-    // =========================
-
-    @Test
-    @DisplayName("Сценарий №12: Покупка тура в кредит с некорректным номером карты")
-    void test12() {
-        open("http://localhost:8080");
-        $$("button").findBy(text("Купить в кредит")).click();
-
-        page.payWithCard("1234 1234 1234 1234", "12", "26", "IVAN IVANOV", "123");
-        page.submit();
-
-        $(".input__sub").shouldBe(visible);
+        $(".input__sub").shouldHave(text("Поле обязательно для заполнения"));
     }
 
     @Test
-    @DisplayName("Сценарий №13: Покупка тура в кредит с месяцем 13")
-    void test13() {
-        open("http://localhost:8080");
-        $$("button").findBy(text("Купить в кредит")).click();
-
-        page.payWithCard("4444 4444 4444 4441", "13", "26", "IVAN IVANOV", "123");
+    @DisplayName("Сценарий 11: Пустой CVV")
+    void shouldShowErrorEmptyCVVCredit() {
+        $$("button").findBy(text("Купить в кредит")).shouldBe(visible).click();
+        page.payWithCard(DataHelper.approvedCard(), DataHelper.validMonth(),
+                DataHelper.validYear(), DataHelper.validOwner(), "");
         page.submit();
-
-        $(".input__sub").shouldBe(visible);
+        $(".input__sub").shouldHave(text("Поле обязательно для заполнения"));
     }
 
     @Test
-    @DisplayName("Сценарий №14: Покупка тура в кредит с месяцем 00")
-    void test14() {
-        open("http://localhost:8080");
-        $$("button").findBy(text("Купить в кредит")).click();
-
-        page.payWithCard("4444 4444 4444 4441", "00", "26", "IVAN IVANOV", "123");
+    @DisplayName("Сценарий 12: Некорректный номер карты")
+    void shouldShowErrorInvalidCardNumberCredit() {
+        $$("button").findBy(text("Купить в кредит")).shouldBe(visible).click();
+        page.payWithCard("1234 1234 1234 1234", DataHelper.validMonth(),
+                DataHelper.validYear(), DataHelper.validOwner(), DataHelper.validCVV());
         page.submit();
-
-        $(".input__sub").shouldBe(visible);
+        $(".input__sub").shouldHave(text("Неверный формат"));
     }
 
     @Test
-    @DisplayName("Сценарий №15: Покупка тура в кредит с прошедшим сроком действия карты")
-    void test15() {
-        open("http://localhost:8080");
-        $$("button").findBy(text("Купить в кредит")).click();
-
-        page.payWithCard("4444 4444 4444 4441", "12", "20", "IVAN IVANOV", "123");
+    @DisplayName("Сценарий 13: Месяц = 13")
+    void shouldShowErrorInvalidMonth13Credit() {
+        $$("button").findBy(text("Купить в кредит")).shouldBe(visible).click();
+        page.payWithCard(DataHelper.approvedCard(), "13", DataHelper.validYear(),
+                DataHelper.validOwner(), DataHelper.validCVV());
         page.submit();
-
-        $(".input__sub").shouldBe(visible);
+        $(".input__sub").shouldHave(text("Неверный формат"));
     }
 
     @Test
-    @DisplayName("Сценарий №16: Покупка тура в кредит с годом более чем на 6 лет вперёд")
-    void test16() {
-        open("http://localhost:8080");
-        $$("button").findBy(text("Купить в кредит")).click();
-
-        page.payWithCard("4444 4444 4444 4441", "12", "35", "IVAN IVANOV", "123");
+    @DisplayName("Сценарий 14: Месяц = 00")
+    void shouldShowErrorInvalidMonth00Credit() {
+        $$("button").findBy(text("Купить в кредит")).shouldBe(visible).click();
+        page.payWithCard(DataHelper.approvedCard(), "00", DataHelper.validYear(),
+                DataHelper.validOwner(), DataHelper.validCVV());
         page.submit();
-
-        $(".input__sub").shouldBe(visible);
+        $(".input__sub").shouldHave(text("Неверный формат"));
     }
 
     @Test
-    @DisplayName("Сценарий №17: Покупка тура в кредит с CVV из 2 цифр")
-    void test17() {
-        open("http://localhost:8080");
-        $$("button").findBy(text("Купить в кредит")).click();
-
-        page.payWithCard("4444 4444 4444 4441", "12", "26", "IVAN IVANOV", "12");
+    @DisplayName("Сценарий 15: Прошедший срок действия карты")
+    void shouldShowErrorExpiredCardCredit() {
+        $$("button").findBy(text("Купить в кредит")).shouldBe(visible).click();
+        page.payWithCard(DataHelper.approvedCard(), "12", "20",
+                DataHelper.validOwner(), DataHelper.validCVV());
         page.submit();
-
-        $(".input__sub").shouldBe(visible);
+        $(".input__sub").shouldHave(text("Истёк срок действия карты"));
     }
 
     @Test
-    @DisplayName("Сценарий №18: Покупка тура в кредит с CVV из 4 цифр")
-    void test18() {
-        open("http://localhost:8080");
-        $$("button").findBy(text("Купить в кредит")).click();
-
-        page.payWithCard("4444 4444 4444 4441", "12", "26", "IVAN IVANOV", "1234");
+    @DisplayName("Сценарий 16: Год более чем на 6 лет вперёд")
+    void shouldShowErrorFutureYearCredit() {
+        $$("button").findBy(text("Купить в кредит")).shouldBe(visible).click();
+        page.payWithCard(DataHelper.approvedCard(), DataHelper.validMonth(), "33",
+                DataHelper.validOwner(), DataHelper.validCVV());
         page.submit();
+        $(".input__sub").shouldHave(text("Неверный срок действия карты"));
+    }
 
-        $(".input__sub").shouldBe(visible);
+    @Test
+    @DisplayName("Сценарий 17: CVV из 2 цифр")
+    void shouldShowErrorShortCVVCredit() {
+        $$("button").findBy(text("Купить в кредит")).shouldBe(visible).click();
+        page.payWithCard(DataHelper.approvedCard(), DataHelper.validMonth(),
+                DataHelper.validYear(), DataHelper.validOwner(), "12");
+        page.submit();
+        $$(".input__sub").findBy(text("Неверный формат"))
+                .shouldBe(visible, Duration.ofSeconds(5));
+    }
+
+    @Test
+    @DisplayName("Сценарий 18: CVV из 4 цифр")
+    void shouldShowErrorLongCVVCredit() {
+        $$("button").findBy(text("Купить в кредит")).shouldBe(visible).click();
+        page.payWithCard(DataHelper.approvedCard(), DataHelper.validMonth(),
+                DataHelper.validYear(), DataHelper.validOwner(), "1234");
+        page.submit();
+        $$(".input__sub").findBy(text("Неверный формат"))
+                .shouldBe(visible, Duration.ofSeconds(5));
+    }
+
+    @Test
+    @DisplayName("Сценарий 19: CVV = 000")
+    void shouldShowErrorCVVCredit000() {
+        $$("button").findBy(text("Купить в кредит")).shouldBe(visible).click();
+        page.payWithCard(DataHelper.approvedCard(), DataHelper.validMonth(),
+                DataHelper.validYear(), DataHelper.validOwner(), "000");
+        page.submit();
+        $$(".input__sub").findBy(text("Неверный формат"))
+                .shouldBe(visible, Duration.ofSeconds(5));
+    }
+
+    @Test
+    @DisplayName("Сценарий 20: Имя владельца на русском")
+    void shouldShowErrorOwnerRussianCredit() {
+        $$("button").findBy(text("Купить в кредит")).shouldBe(visible).click();
+        page.payWithCard(DataHelper.approvedCard(), DataHelper.validMonth(),
+                DataHelper.validYear(), "ИВАН ИВАНОВ", DataHelper.validCVV());
+        page.submit();
+        $(".input__sub").shouldHave(text("Неверный формат"));
+    }
+
+    @Test
+    @DisplayName("Сценарий 21: Имя владельца с цифрами")
+    void shouldShowErrorOwnerWithNumbersCredit() {
+        $$("button").findBy(text("Купить в кредит")).shouldBe(visible).click();
+        page.payWithCard(DataHelper.approvedCard(), DataHelper.validMonth(),
+                DataHelper.validYear(), "IVAN123", DataHelper.validCVV());
+        page.submit();
+        $(".input__sub").shouldHave(text("Неверный формат"));
+    }
+
+    @Test
+    @DisplayName("Сценарий 22: Имя владельца со спецсимволами")
+    void shouldShowErrorOwnerSpecialCharsCredit() {
+        $$("button").findBy(text("Купить в кредит")).shouldBe(visible).click();
+        page.payWithCard(DataHelper.approvedCard(), DataHelper.validMonth(),
+                DataHelper.validYear(), "IV@N IVANOV", DataHelper.validCVV());
+        page.submit();
+        $(".input__sub").shouldHave(text("Неверный формат"));
+    }
+
+    @Test
+    @DisplayName("Сценарий 23: Очень короткое имя владельца")
+    void shouldShowErrorOwnerShortCredit() {
+        $$("button").findBy(text("Купить в кредит")).shouldBe(visible).click();
+        page.payWithCard(DataHelper.approvedCard(), DataHelper.validMonth(),
+                DataHelper.validYear(), "I", DataHelper.validCVV());
+        page.submit();
+        $(".input__sub").shouldHave(text("Неверный формат"));
+    }
+
+    @Test
+    @DisplayName("Сценарий 24: Очень длинное имя владельца")
+    void shouldShowErrorOwnerLongCredit() {
+        $$("button").findBy(text("Купить в кредит")).shouldBe(visible).click();
+        page.payWithCard(DataHelper.approvedCard(), DataHelper.validMonth(),
+                DataHelper.validYear(), "IVAN IVANOV IVANOV IVANOV", DataHelper.validCVV());
+        page.submit();
+        $(".input__sub").shouldHave(text("Неверный формат"));
     }
 }

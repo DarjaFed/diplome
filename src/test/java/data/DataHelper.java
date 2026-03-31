@@ -7,7 +7,6 @@ public class DataHelper {
 
     private static final DateTimeFormatter format = DateTimeFormatter.ofPattern("MM");
     private static final DateTimeFormatter yearFormat = DateTimeFormatter.ofPattern("yy");
-
     public static String approvedCard() {
         return "4444 4444 4444 4441";
     }
@@ -17,19 +16,11 @@ public class DataHelper {
     }
 
     public static String validMonth() {
-        return LocalDate.now().plusMonths(1).format(format);
+        return "12";
     }
 
     public static String validYear() {
-        return LocalDate.now().plusYears(2).format(yearFormat);
-    }
-
-    public static String expiredYear() {
-        return LocalDate.now().minusYears(1).format(yearFormat);
-    }
-
-    public static String tooFarYear() {
-        return LocalDate.now().plusYears(8).format(yearFormat);
+        return "26";
     }
 
     public static String validOwner() {
