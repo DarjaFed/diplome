@@ -1,57 +1,63 @@
 package tests;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import data.DataHelper;
+import data.DatabaseHelper;
+import org.junit.jupiter.api.*;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.Statement;
+import pages.PaymentPage;
 
+import static com.codeborne.selenide.Condition.text;
+import static com.codeborne.selenide.Selenide.*;
+import static com.codeborne.selenide.Condition.visible;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class DatabaseTests {
 
-    private String url = "jdbc:mysql://localhost:3306/app";
-    private String user = "user";
-    private String password = "pass";
+    PaymentPage page = new PaymentPage();
 
     @BeforeEach
-    void cleanDatabase() throws Exception {
-        Connection conn = DriverManager.getConnection(url, user, password);
-        Statement stmt = conn.createStatement();
-        stmt.executeUpdate("DELETE FROM credit_request_entity");
-        conn.close();
+    void setUp() throws Exception {
+        open("http://localhost:8080");
+        DatabaseHelper.cleanDatabase();
     }
 
     @Test
-    @DisplayName("Проверка записи APPROVED в базе данных")
-    void shouldSaveApprovedPayment() throws Exception {
+    @DisplayName("Должен сохраняться статус APPROVED в credit_request_entity")
+    void shouldSaveApprovedCredit() throws Exception {
+        $$("button").findBy(text("Купить в кредит")).click();
 
-        Connection conn = DriverManager.getConnection(url, user, password);
-
-        Statement stmt = conn.createStatement();
-        ResultSet rs = stmt.executeQuery(
-                "SELECT status FROM credit_request_entity ORDER BY id DESC LIMIT 1"
+        page.fillForm(
+                DataHelper.approvedCard(),
+                DataHelper.validMonth(),
+                DataHelper.validYear(),
+                DataHelper.validOwner(),
+                DataHelper.validCVV()
         );
+        page.submit();
 
-        rs.next();
-        assertEquals("APPROVED", rs.getString("status"));
+        $(".notification_status_ok").shouldBe(visible);
+
+        String status = DatabaseHelper.getLastCreditStatus();
+        assertEquals("APPROVED", status);
     }
 
     @Test
-    @DisplayName("Проверка записи DECLINED в базе данных")
-    void shouldSaveDeclinedPayment() throws Exception {
+    @DisplayName("Должен сохраняться статус DECLINED в credit_request_entity")
+    void shouldSaveDeclinedCredit() throws Exception {
+        $$("button").findBy(text("Купить в кредит")).click();
 
-        Connection conn = DriverManager.getConnection(url, user, password);
-
-        Statement stmt = conn.createStatement();
-        ResultSet rs = stmt.executeQuery(
-                "SELECT status FROM credit_request_entity ORDER BY id DESC LIMIT 1"
+        page.fillForm(
+                DataHelper.declinedCard(),
+                DataHelper.validMonth(),
+                DataHelper.validYear(),
+                DataHelper.validOwner(),
+                DataHelper.validCVV()
         );
+        page.submit();
 
-        rs.next();
-        assertEquals("DECLINED", rs.getString("status"));
+        $(".notification_status_error").shouldBe(visible);
+
+        String status = DatabaseHelper.getLastCreditStatus();
+        assertEquals("DECLINED", status);
     }
 }
