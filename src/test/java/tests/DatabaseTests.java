@@ -2,62 +2,72 @@ package tests;
 
 import data.DataHelper;
 import data.DatabaseHelper;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import pages.CreditPage;
+import pages.MainPage;
 
-import pages.PaymentPage;
-
-import static com.codeborne.selenide.Condition.text;
-import static com.codeborne.selenide.Selenide.*;
-import static com.codeborne.selenide.Condition.visible;
+import static com.codeborne.selenide.Selenide.open;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class DatabaseTests {
 
-    PaymentPage page = new PaymentPage();
+    private CreditPage creditPage;
 
     @BeforeEach
     void setUp() throws Exception {
         open("http://localhost:8080");
+
+        MainPage mainPage = new MainPage();
+        creditPage = mainPage.openCreditPage();
+
         DatabaseHelper.cleanDatabase();
     }
 
     @Test
-    @DisplayName("Должен сохраняться статус APPROVED в credit_request_entity")
+    @DisplayName("Статус APPROVED сохраняется в credit_request_entity")
     void shouldSaveApprovedCredit() throws Exception {
-        $$("button").findBy(text("Купить в кредит")).click();
 
-        page.fillForm(
+        creditPage.fillForm(
                 DataHelper.approvedCard(),
                 DataHelper.validMonth(),
                 DataHelper.validYear(),
                 DataHelper.validOwner(),
                 DataHelper.validCVV()
         );
-        page.submit();
 
-        $(".notification_status_ok").shouldBe(visible);
+        creditPage.submit();
+        creditPage.shouldShowSuccessNotification();
 
-        String status = DatabaseHelper.getLastCreditStatus();
-        assertEquals("APPROVED", status);
+        String actual = DatabaseHelper.getLastCreditStatus();
+
+        assertEquals(
+                "APPROVED",
+                actual
+        );
     }
 
     @Test
-    @DisplayName("Должен сохраняться статус DECLINED в credit_request_entity")
+    @DisplayName("Статус DECLINED сохраняется в credit_request_entity")
     void shouldSaveDeclinedCredit() throws Exception {
-        $$("button").findBy(text("Купить в кредит")).click();
 
-        page.fillForm(
+        creditPage.fillForm(
                 DataHelper.declinedCard(),
                 DataHelper.validMonth(),
                 DataHelper.validYear(),
                 DataHelper.validOwner(),
                 DataHelper.validCVV()
         );
-        page.submit();
 
-        $(".notification_status_error").shouldBe(visible);
+        creditPage.submit();
+        creditPage.shouldShowErrorNotification();
 
-        String status = DatabaseHelper.getLastCreditStatus();
-        assertEquals("DECLINED", status);
+        String actual = DatabaseHelper.getLastCreditStatus();
+
+        assertEquals(
+                "DECLINED",
+                actual
+        );
     }
 }
