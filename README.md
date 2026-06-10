@@ -7,19 +7,19 @@
 
 * покупка тура по банковской карте;
 * покупка тура в кредит.
-
+  Автоматизированные тесты проверяют корректность работы пользовательского интерфейса, обработку платёжных операций и сохранение данных в базе данных.
 #### Цель проекта — автоматизация проверки пользовательских сценариев, валидации формы оплаты и корректности записи данных в базу данных.
 
 ### Используемые технологии
-Java 17
+* Java 17
 * Gradle
 * JUnit 5
 * Selenide
 * Docker
 * MySQL
 * PostgreSQL
-* JDBC
 * Allure Report
+* Lombok
 
 #### Основные пакеты
 tests — тестовые классы;
@@ -35,7 +35,11 @@ docker-compose.yml — запуск контейнеров.
 * Java 17;
 * Gradle;
 * Git.
+  Проверка версий:
 
+java -version
+docker -v
+git --version
 ### Запуск проекта
 
 #### 1. Запуск контейнеров
@@ -62,19 +66,23 @@ docker ps
 
 Для MySQL:
 
-java "-Dspring.datasource.url=jdbc:mysql://localhost:3306/app?allowPublicKeyRetrieval=true&useSSL=false" \
-"-Dspring.datasource.username=user" \
-"-Dspring.datasource.password=pass" \
--jar artifacts/aqa-shop.jar
+java -Dspring.datasource.url=jdbc:mysql://localhost:3306/app \
+-Dspring.datasource.username=app \
+-Dspring.datasource.password=pass \
+-Dspring.credit-gate.url=http://localhost:9999/credit \
+-Dspring.payment-gate.url=http://localhost:9999/payment \
+-jar aqa-shop.jar
 
 Для PostgreSQL:
+java -Dspring.datasource.url=jdbc:postgresql://localhost:5432/app \
+-Dspring.datasource.username=app \
+-Dspring.datasource.password=pass \
+-Dspring.credit-gate.url=http://localhost:9999/credit \
+-Dspring.payment-gate.url=http://localhost:9999/payment \
+-jar aqa-shop.jar
+После запуска приложение должно быть доступно по адресу:
 
-java "-Dspring.datasource.url=jdbc:postgresql://localhost:5432/app" \
-"-Dspring.datasource.username=user" \
-"-Dspring.datasource.password=pass" \
--jar artifacts/aqa-shop.jar
-
-
+http://localhost:8080
 ### 3. Запуск автотестов
    ./gradlew clean test
 
@@ -87,11 +95,11 @@ java "-Dspring.datasource.url=jdbc:postgresql://localhost:5432/app" \
 
 Файл application.properties:
 
-spring.datasource.url=jdbc:mysql://localhost:3306/app?allowPublicKeyRetrieval=true&useSSL=false
-spring.datasource.username=root
-spring.datasource.password=root
+spring.datasource.url=jdbc:mysql://localhost:3306/app
+spring.datasource.username=app
+spring.datasource.password=pass
 
-spring.credit-gate.url=http://localhost:9999
+spring.credit-gate.url=http://localhost:9999/credit
 spring.payment-gate.url=http://localhost:9999/payment
 
 Файл gradle.properties:
@@ -150,17 +158,27 @@ org.gradle.jvmargs=-Dfile.encoding=UTF-8
 
 #### Отчёт содержит:
 
-результаты выполнения тестов;
-статистику прохождения;
-сведения об ошибках;
-приложенные скриншоты при падении тестов.
+* результаты выполнения тестов;
+* статистику прохождения;
+* сведения об ошибках;
+* приложенные скриншоты при падении тестов.
+
+#### Завершение работы
+
+##### Остановить контейнеры:
+
+docker-compose down
+
+##### Удалить контейнеры и тома:
+
+docker-compose down -v
 
 ### Результат проекта
 
 В рамках дипломного проекта:
 
-разработано 39 автоматизированных тестов;
-реализована архитектура Page Object;
-реализована проверка данных в БД;
-настроено формирование отчётов Allure;
-настроен запуск тестового окружения через Docker.
+* разработано 39 автоматизированных тестов;
+* реализована архитектура Page Object;
+* реализована проверка данных в БД;
+* настроено формирование отчётов Allure;
+* настроен запуск тестового окружения через Docker.
