@@ -4,29 +4,11 @@ import java.sql.*;
 
 public class DatabaseHelper {
 
-    private static final String db =
-            System.getProperty("db", "mysql");
-
-    private static String getUrl() {
-        if ("postgres".equals(db)) {
-            return "jdbc:postgresql://localhost:5432/app";
-        }
-        return "jdbc:mysql://localhost:3306/app?allowPublicKeyRetrieval=true&useSSL=false";
-    }
-
-    private static String getUser() {
-        return "user";
-    }
-
-    private static String getPassword() {
-        return "pass";
-    }
-
     private static Connection getConnection() throws SQLException {
         return DriverManager.getConnection(
-                getUrl(),
-                getUser(),
-                getPassword()
+                System.getProperty("db.url"),
+                System.getProperty("db.user"),
+                System.getProperty("db.password")
         );
     }
 
@@ -49,9 +31,7 @@ public class DatabaseHelper {
                         "SELECT status FROM credit_request_entity ORDER BY created DESC LIMIT 1"
                 )
         ) {
-            return rs.next()
-                    ? rs.getString("status")
-                    : null;
+            return rs.next() ? rs.getString("status") : null;
         }
     }
 
@@ -63,9 +43,7 @@ public class DatabaseHelper {
                         "SELECT status FROM payment_entity ORDER BY created DESC LIMIT 1"
                 )
         ) {
-            return rs.next()
-                    ? rs.getString("status")
-                    : null;
+            return rs.next() ? rs.getString("status") : null;
         }
     }
 }
